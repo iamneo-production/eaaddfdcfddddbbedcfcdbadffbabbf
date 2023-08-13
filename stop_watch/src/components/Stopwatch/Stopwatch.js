@@ -1,80 +1,94 @@
-import './Stopwatch.css'
-import {useState,useRef,} from 'react';
+import React, { useState, useEffect } from "react";
+import './Stopwatch.css';
+const Stopwatch = () => {
+  // state to track the elapsed time
+  const [disable, setDisable] = useState(true);
+  const [visible, setVisible] = useState(true);
+  const removeVisible = ()=>{
+    setVisible((prev)=>!prev);
+  }
+  const removeDisable= ()=>{
+    setDisable(false);
+  }
 
-const Stopwatch=()=>{
+  const [time, setTime] = useState(0);
+  // state to track whether the stopwatch is running
+  const [isRunning, setIsRunning] = useState(false);
 
-    const useTimer = (initialState = 0) => {
-      const [timer, setTimer] = useState(initialState)
-      const [isActive, setIsActive] = useState(false)
-      const [isPaused, setIsPaused] = useState(false)
-      const countRef = useRef(null)
-    
-      const handleStart = () => {
-        setIsActive(true)
-        setIsPaused(true)
-        countRef.current = setInterval(() => {
-          setTimer((timer) => timer + 1)
-        }, 1000)
-      }
-    
-      const handlePause = () => {
-        clearInterval(countRef.current)
-        setIsPaused(false)
-      }
-    
-      const handleResume = () => {
-        setIsPaused(true)
-        countRef.current = setInterval(() => {
-          setTimer((timer) => timer + 1)
-        }, 1000)
-      }
-    
-      const handleReset = () => {
-        clearInterval(countRef.current)
-        setIsActive(false)
-        setIsPaused(false)
-        setTimer(0)
-      }
-    
-      return { timer, isActive, isPaused, handleStart, handlePause, handleResume, handleReset }
+  useEffect(() => {
+    let interval = null;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setTime((time) => time + 1);
+      }, 1000);
+    } else if (!isRunning && time !== 0) {
+      clearInterval(interval);
     }
+    return () => clearInterval(interval);
+  }, [isRunning, time]);
 
-    const formatTime = () => {
-        const getSeconds = `0${(timer % 60)}`.slice(-2)
-        const minutes = `${Math.floor(timer / 60)}`
-        const getMinutes = `0${minutes % 60}`.slice(-2)
-        const getHours = `0${Math.floor(timer / 3600)}`.slice(-2)
-    
-        return `${getHours} : ${getMinutes} : ${getSeconds}`
-      }
+  const handleStart = () => {
+    removeDisable();
+    removeVisible();
+    setIsRunning(true);
+  };
 
-    const { timer, isActive, isPaused, handleStart, handlePause, handleResume, handleReset } = useTimer(0)
+  const handlePause = () => {
+    setIsRunning(false);
+  };
 
-    return(
-            <div className="watch" >
-            <div className="Main">
-                <h1 className="head">React Stopwatch</h1>
-                <div className="timer" data-testid="time">
-                    <h1>{formatTime(timer)}</h1>
-                </div>
-                <div className="buttons">
-                {
-                !isActive && !isPaused ?
-                <button className="btn" onClick={handleStart} data-testid="start" >Start</button>
-                : (
-                    
-                    isPaused ? <button className="btn" onClick={handlePause} data-testid="pause">Pause</button> :
-                    <button className="btn" onClick={handleResume}>Resume</button>
-                )
-                }
-                <button className="btn" onClick={handleReset} disabled={!isActive} data-testid="reset" >Reset</button>
-                </div>
+  const handleResume = () => {
+    setIsRunning(true);
+  };
 
-            </div>
-            </div>
-        
+  const handleReset = () => {
+    setTime(0);
+    removeVisible();
+    setIsRunning(false);
+  };
 
-    )
-}
+  const formattedTime = () => {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <div className = "watch_container">
+      <h1>React Stopwatch</h1>
+      {/* display the elapsed time */}
+      <p data-testid="time" className="timefont">{formattedTime()}</p>
+      <div className = "button_con">
+      {/* start button */}
+        {visible &&(
+            <button data-testid="start" onClick={handleStart}>
+              Start
+            </button>
+        )}
+        {/* pause button */}
+      {isRunning && (
+        <button data-testid="pause" onClick={handlePause}>
+          Pause
+        </button>
+      )}
+      {/* resume button */}
+      {!isRunning && time !== 0 && (
+        <button data-testid="resume" onClick={handleResume}>
+          Resume
+        </button>
+      )}
+      { (
+        <button data-testid="reset" onClick={handleReset} disabled={disable}>
+            Reset
+        </button>
+      )}
+
+        </div>
+    </div>
+  );
+};
 
 export default Stopwatch;
